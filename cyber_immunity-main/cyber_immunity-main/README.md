@@ -105,7 +105,7 @@ a) точный состав и количество компонентов, п�
 
 ####  Политики безопасности
 Реализация в виде кода : 
-
+```
  python
 import base64
 VERIFIER_SEAL = 'verifier_seal'
@@ -165,3 +165,4 @@ def check_payload_seal(payload):
     except Exception as e:
         print(f'[error] seal check error: {e}')
         return False
+```
