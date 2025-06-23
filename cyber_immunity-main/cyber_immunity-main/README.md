@@ -102,3 +102,66 @@ a) точный состав и количество компонентов, п�
 | Робот-фармацевт | Доверенный | SM |При компрометации возможно нарушение технологического процесса.| 
 Система верификации рецептов| Недоверенный | MM |При атаке может быть подменён рецепт или допущен недостоверный, что влияет на достоверность исходных данных.| 
 Контроль конфигурации| Доверенный, повышающий целостность данных| SS |Критическая подсистема, гарантирующая соответствие производственного процесса утверждённым параметрам. При её компрометации нарушается вся модель доверия.|
+
+####  Политики безопасности
+Реализация в коде : 
+
+import base64
+VERIFIER_SEAL = 'verifier_seal'
+
+def check_operation(id, details):
+    authorized = False
+    # print(f"[debug] checking policies for event {id}, details: {details}")
+    print(f"[info] checking policies for event {id},"
+          f" {details['source']}->{details['deliver_to']}: {details['operation']}")
+    src = details['source']
+    dst = details['deliver_to']
+    operation = details['operation']
+    if src == 'storage' and dst == 'sistem verifier' and operation == 'verification_requested':
+        authorized = True
+    if src == 'storage' and dst == 'message broker' and operation == 'updating_data':
+        authorized = True
+    if src == 'sistem verifier' and dst == 'message broker' and operation == 'handle_verification_result':
+        authorized = True
+    if src == 'message broker' and dst == 'security monitor' and operation == 'updating_data' \
+        and details['verified'] is True:
+        authorized = True
+    if src == 'message broker' and dst == 'security monitor' and operation == 'updating_data' \
+        and details['configured'] is True:
+        authorized = True
+    if src == 'message broker' and dst == 'system diagnostics' and operation == 'handle_diagnostic_result':
+        authorized = True
+    if src == 'message broker' and dst =='system diagnostics' and operation == 'diagnostic_requested':
+        authorized = True
+    if src == 'management system' and dst =='robot' and operation == 'updating_data':
+        authorized = True
+    if src == 'security monitor' and dst =='robot' and operation == 'updating_data':
+        authorized = True
+    if src == 'management system' and dst =='system diagnostics' and operation == 'updating_data':
+        authorized = True
+    if src == 'message broker' and dst =='management system' and operation == 'diagnostic_requested':
+        authorized = True
+    if src == 'message broker' and dst == 'configuration control' and operation == 'handle_diagnostic_result':
+        authorized = True
+    if src == 'message broker' and dst =='configuration control' and operation == 'diagnostic_requested':
+        authorized = True
+    if src == 'message broker' and dst =='configuration control' and operation == 'updating_data':
+        authorized = True
+    if src == 'configuration control' and dst == 'sistem verifier' and operation == 'verification_requested':
+        authorized = True
+    if src == 'sistem verifier' and dst == 'configuration control' and operation == 'handle_verification_result':
+        authorized = True
+
+    return authorized
+
+
+def check_payload_seal(payload):
+    try:
+        p = base64.b64decode(payload).decode()
+        if p.endswith(VERIFIER_SEAL):
+            print('[info] payload seal is valid')
+            return True
+    except Exception as e:
+        print(f'[error] seal check error: {e}')
+        return False
+
